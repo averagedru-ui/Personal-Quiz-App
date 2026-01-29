@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== MAIN MENU ===== -->
+  <div id="menu">
+    <h1>📘 Quiz App</h1>
+
+    <button class="primary" onclick="createNewQuiz()">➕ Create New Quiz</button>
+
+    <h3>Your Quizzes</h3>
+    <div id="quizList">
+      <!-- Quiz cards populated by JS -->
+    </div>
+
+    <div id="resumeSection" class="hidden">
+      <h3>Resume</h3>
+      <button class="primary" onclick="resumeQuiz()">▶️ Resume Quiz</button>
+    </div>
+  </div>
+
+  <!-- ===== BUILDER SECTION ===== -->
+  <div id="builder" class="hidden">
+    <h2 id="builderTitle">Quiz Builder</h2>
+
+    <input type="text" id="quizTitle" placeholder="Quiz title">
+
+    <hr>
+
+    <h3>Add Question</h3>
+
+    <input type="text" id="q" placeholder="Enter question">
+
+    <select id="type">
+      <option value="mc">Multiple Choice</option>
+      <option value="tf">True / False</option>
+    </select>
+
+    <input type="text" id="a1" placeholder="Answer A">
+    <input type="text" id="a2" placeholder="Answer B">
+    <input type="text" id="a3" placeholder="Answer C">
+    <input type="text" id="a4" placeholder="Answer D">
+
+    <select id="correct">
+      <option value="">Correct Answer</option>
+      <option value="0">A</option>
+      <option value="1">B</option>
+      <option value="2">C</option>
+      <option value="3">D</option>
+    </select>
+
+    <button class="primary" onclick="addQuestion()">Add Question</button>
+    <button class="primary" onclick="startQuiz()">Start Quiz</button>
+    <button onclick="backToMenu()">⬅ Back to Menu</button>
+
+    <hr>
+
+    <h3>Questions</h3>
+
+    <!-- Scrollable question list -->
+    <div id="questionList" style="max-height: 300px; overflow-y: auto;"></div>
+  </div>
+
+  <!-- ===== QUIZ SECTION ===== -->
+  <div id="quiz" class="hidden">
+    <h2 id="questionText"></h2>
+
+    <!-- Progress Bar -->
+    <div id="progressContainer">
+      <div id="progressBar"></div>
+    </div>
+
+    <div id="choices"></div>
+
+    <button class="primary" onclick="nextQuestion()">Next</button>
+  </div>
+
+  <!-- ===== FINISH SCREEN ===== -->
+  <div id="finishMenu" class="hidden">
+    <h2>Quiz Finished!</h2>
+
+    <p id="finalScore"></p>
+
+    <button class="primary" onclick="restartQuiz()">Restart Quiz</button>
+    <button class="primary" onclick="exitQuiz()">Back to Menu</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
