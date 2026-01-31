@@ -56,3 +56,12 @@ button:hover {
   display: inline-block;
   font-size: 14px;
 }
+
+#questionList {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #333;
+  padding: 10px;
+  margin: 10px auto;
+  background: #1e1e1e;
+}
