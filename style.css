@@ -11,8 +11,8 @@ body {
 
 /* ===== INPUTS & SELECTS ===== */
 input, select {
-  width: 100%;
-  padding: 14px;
+  width: 75%;
+  padding: 16px;
   margin: 10px 0;
   border-radius: 8px;
   border: none;
@@ -21,7 +21,7 @@ input, select {
 
 /* ===== BUTTONS ===== */
 button {
-  width: 100%;
+  width: 75%;
   padding: 16px;
   margin: 10px 0;
   border-radius: 8px;
@@ -38,10 +38,10 @@ button.secondary {
 /* ===== QUIZ CHOICES ===== */
 #choices button {
   display: block;
-  width: 100%;
+  width: 75%;
   margin: 10px 0;
   text-align: left;
-  padding: 14px;
+  padding: 16px;
   background: #1e293b;
   font-size: 16px;
 }
