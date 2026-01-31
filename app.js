@@ -1,342 +1,252 @@
-/* =========================
-   GLOBAL STATE
-========================= */
+/***********************
+  GLOBAL STATE
+************************/
+let quizzes = JSON.parse(localStorage.getItem("quizzes")) || [];
+let currentQuiz = null;
+let quizIndex = 0;
+let score = 0;
+let selectedAnswer = null;
+let shuffledChoices = [];
+let wrongAnswers = [];
 
-let quizzes = [];
-let activeQuizId = null;
-
-let currentIndex = 0;
-let userAnswers = [];
-let quizActive = false;
-
-/* =========================
-   STORAGE
-========================= */
-
-function saveApp() {
-  localStorage.setItem("quizAppData", JSON.stringify({
-    quizzes,
-    activeQuizId,
-    currentIndex,
-    userAnswers,
-    quizActive
-  }));
-}
-
-function loadApp() {
-  const data = localStorage.getItem("quizAppData");
-  if (!data) return;
-
-  const parsed = JSON.parse(data);
-  quizzes = parsed.quizzes || [];
-  activeQuizId = parsed.activeQuizId;
-  currentIndex = parsed.currentIndex || 0;
-  userAnswers = parsed.userAnswers || [];
-  quizActive = parsed.quizActive || false;
-}
-
-function clearProgress() {
-  quizActive = false;
-  currentIndex = 0;
-  userAnswers = [];
-  saveApp();
-}
-
-/* =========================
-   HELPERS
-========================= */
-
-function $(id) {
-  return document.getElementById(id);
-}
-
-function show(screen) {
-  ["menu", "builder", "quiz", "finishMenu"].forEach(s => {
-    $(s).classList.add("hidden");
-  });
-  $(screen).classList.remove("hidden");
-}
-
-function getActiveQuiz() {
-  return quizzes.find(q => q.id === activeQuizId);
-}
-
-/* =========================
-   MENU
-========================= */
-
-function createNewQuiz() {
-  const title = prompt("Quiz title?");
-  if (!title) return;
-
-  const quiz = {
-    id: crypto.randomUUID(),
-    title,
-    questions: []
-  };
-
-  quizzes.push(quiz);
-  activeQuizId = quiz.id;
-  saveApp();
-  openBuilder();
-}
-
-function openBuilder(id = activeQuizId) {
-  activeQuizId = id;
-  saveApp();
-
-  $("quizTitle").value = getActiveQuiz().title;
+/***********************
+  DOM READY
+************************/
+document.addEventListener("DOMContentLoaded", () => {
   renderQuestionList();
-  show("builder");
-}
+});
 
-function backToMenu() {
-  activeQuizId = null;
-  saveApp();
-  renderQuizList();
-  show("menu");
-}
+/***********************
+  BUILDER LOGIC
+************************/
+const qInput = document.getElementById("q");
+const typeSelect = document.getElementById("type");
+const aInputs = [
+  document.getElementById("a1"),
+  document.getElementById("a2"),
+  document.getElementById("a3"),
+  document.getElementById("a4")
+];
+const correctSelect = document.getElementById("correct");
+const questionList = document.getElementById("questionList");
 
-function renderQuizList() {
-  const list = $("quizList");
-  list.innerHTML = "";
+typeSelect.addEventListener("change", handleTypeChange);
 
-  quizzes.forEach(q => {
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <strong>${q.title}</strong><br>
-      <small>${q.questions.length} questions</small><br>
-      <button onclick="openBuilder('${q.id}')">Edit</button>
-      <button onclick="startQuiz('${q.id}')">Start</button>
+function handleTypeChange() {
+  if (typeSelect.value === "tf") {
+    aInputs[0].value = "True";
+    aInputs[1].value = "False";
+    aInputs[2].value = "";
+    aInputs[3].value = "";
+
+    aInputs[2].style.display = "none";
+    aInputs[3].style.display = "none";
+
+    correctSelect.innerHTML = `
+      <option value="">Correct Answer</option>
+      <option value="0">True</option>
+      <option value="1">False</option>
     `;
-    list.appendChild(card);
-  });
-}
+  } else {
+    aInputs.forEach(i => i.style.display = "block");
 
-/* =========================
-   BUILDER
-========================= */
+    correctSelect.innerHTML = `
+      <option value="">Correct Answer</option>
+      <option value="0">A</option>
+      <option value="1">B</option>
+      <option value="2">C</option>
+      <option value="3">D</option>
+    `;
+  }
+}
 
 function addQuestion() {
-  const quiz = getActiveQuiz();
-  if (!quiz) return;
+  if (!qInput.value || correctSelect.value === "") return alert("Fill all fields");
 
-  const q = $("q").value.trim();
-  const type = $("type").value;
-  const correct = parseInt($("correct").value);
+  const answers = aInputs
+    .map(i => i.value.trim())
+    .filter(a => a !== "");
 
-  if (!q || isNaN(correct)) {
-    alert("Fill question and correct answer");
-    return;
-  }
+  const question = {
+    text: qInput.value,
+    type: typeSelect.value,
+    answers,
+    correct: Number(correctSelect.value)
+  };
 
-  let answers = [];
-
-  if (type === "tf") {
-    answers = ["True", "False"];
-  } else {
-    answers = [
-      $("a1").value,
-      $("a2").value,
-      $("a3").value,
-      $("a4").value
-    ].filter(a => a);
-
-    if (answers.length < 2) {
-      alert("At least 2 answers required");
-      return;
-    }
-  }
-
-  quiz.questions.push({ q, answers, correct });
+  quizzes.push(question);
+  saveData();
   clearInputs();
-  saveApp();
-  renderQuestionList();
-}
-
-function renderQuestionList() {
-  const quiz = getActiveQuiz();
-  const list = $("questionList");
-  list.innerHTML = "";
-
-  quiz.questions.forEach((q, i) => {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-      <strong>${i + 1}. ${q.q}</strong><br>
-      <small>Correct: ${q.answers[q.correct]}</small><br>
-      <button onclick="editQuestion(${i})">Edit</button>
-      <button onclick="deleteQuestion(${i})">Delete</button>
-    `;
-    list.appendChild(div);
-  });
-}
-
-function editQuestion(i) {
-  const quiz = getActiveQuiz();
-  const q = quiz.questions[i];
-
-  $("q").value = q.q;
-  $("type").value = q.answers.length === 2 ? "tf" : "mc";
-  q.answers.forEach((a, idx) => {
-    const el = $("a" + (idx + 1));
-    if (el) el.value = a;
-  });
-  $("correct").value = q.correct;
-
-  quiz.questions.splice(i, 1);
-  saveApp();
-  renderQuestionList();
-}
-
-function deleteQuestion(i) {
-  getActiveQuiz().questions.splice(i, 1);
-  saveApp();
   renderQuestionList();
 }
 
 function clearInputs() {
-  ["q", "a1", "a2", "a3", "a4"].forEach(id => {
-    const el = $(id);
-    if (el) el.value = "";
+  qInput.value = "";
+  aInputs.forEach(i => i.value = "");
+  correctSelect.value = "";
+}
+
+function renderQuestionList() {
+  questionList.innerHTML = "";
+
+  quizzes.forEach((q, index) => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <strong>${index + 1}. ${q.text}</strong>
+      <br><small>${q.type === "tf" ? "True / False" : "Multiple Choice"}</small>
+      <br><br>
+      <button onclick="editQuestion(${index})">Edit</button>
+      <button onclick="deleteQuestion(${index})">Delete</button>
+    `;
+    questionList.appendChild(div);
   });
-  $("correct").value = "";
 }
 
-/* =========================
-   QUIZ
-========================= */
-
-function startQuiz(id = activeQuizId) {
-  activeQuizId = id;
-  const quiz = getActiveQuiz();
-
-  if (!quiz.questions.length) {
-    alert("No questions");
-    return;
-  }
-
-  quizActive = true;
-  currentIndex = 0;
-  userAnswers = [];
-  saveApp();
-
-  show("quiz");
-  showQuestion();
+function deleteQuestion(index) {
+  if (!confirm("Delete this question?")) return;
+  quizzes.splice(index, 1);
+  saveData();
+  renderQuestionList();
 }
 
-function showQuestion() {
-  const quiz = getActiveQuiz();
-  const q = quiz.questions[currentIndex];
+function editQuestion(index) {
+  const q = quizzes[index];
+  qInput.value = q.text;
+  typeSelect.value = q.type;
+  handleTypeChange();
 
-  $("questionText").innerText = q.q;
-  $("choices").innerHTML = "";
+  q.answers.forEach((a, i) => aInputs[i].value = a);
+  correctSelect.value = q.correct;
 
-  const shuffled = q.answers
-    .map((text, idx) => ({ text, idx }))
-    .sort(() => Math.random() - 0.5);
+  quizzes.splice(index, 1);
+  saveData();
+  renderQuestionList();
+}
 
-  shuffled.forEach(a => {
+/***********************
+  QUIZ LOGIC
+************************/
+const builder = document.getElementById("builder");
+const quiz = document.getElementById("quiz");
+const finishMenu = document.getElementById("finishMenu");
+const questionText = document.getElementById("questionText");
+const choicesDiv = document.getElementById("choices");
+const progressBar = document.getElementById("progressBar");
+const finalScore = document.getElementById("finalScore");
+
+function startQuiz() {
+  if (quizzes.length === 0) return alert("Add questions first");
+
+  currentQuiz = [...quizzes];
+  quizIndex = 0;
+  score = 0;
+  wrongAnswers = [];
+
+  builder.classList.add("hidden");
+  quiz.classList.remove("hidden");
+
+  loadQuestion();
+}
+
+function loadQuestion() {
+  selectedAnswer = null;
+  choicesDiv.innerHTML = "";
+
+  const q = currentQuiz[quizIndex];
+  questionText.textContent = q.text;
+
+  shuffledChoices = q.answers.map((text, index) => ({ text, index }));
+  shuffledChoices.sort(() => Math.random() - 0.5);
+
+  shuffledChoices.forEach(choice => {
     const btn = document.createElement("button");
-    btn.innerText = a.text;
-    btn.onclick = () => selectAnswer(a.idx, btn);
-    $("choices").appendChild(btn);
+    btn.textContent = choice.text;
+    btn.onclick = () => selectAnswer(btn, choice.index);
+    choicesDiv.appendChild(btn);
   });
 
   updateProgress();
+  saveProgress();
 }
 
-function selectAnswer(idx, btn) {
+function selectAnswer(btn, index) {
   document.querySelectorAll("#choices button")
     .forEach(b => b.classList.remove("selected"));
-  btn.classList.add("selected");
 
-  userAnswers[currentIndex] = idx;
-  saveApp();
+  btn.classList.add("selected");
+  selectedAnswer = index;
 }
 
 function nextQuestion() {
-  if (userAnswers[currentIndex] === undefined) {
-    alert("Select an answer");
-    return;
+  if (selectedAnswer === null) return alert("Select an answer");
+
+  const q = currentQuiz[quizIndex];
+  if (selectedAnswer === q.correct) {
+    score++;
+  } else {
+    wrongAnswers.push({
+      question: q.text,
+      correct: q.answers[q.correct],
+      selected: q.answers[selectedAnswer]
+    });
   }
 
-  currentIndex++;
-  saveApp();
+  quizIndex++;
 
-  if (currentIndex >= getActiveQuiz().questions.length) {
+  if (quizIndex >= currentQuiz.length) {
     finishQuiz();
   } else {
-    showQuestion();
+    loadQuestion();
   }
 }
 
-/* =========================
-   FINISH & REVIEW
-========================= */
-
 function finishQuiz() {
-  quizActive = false;
-  saveApp();
+  quiz.classList.add("hidden");
+  finishMenu.classList.remove("hidden");
 
-  show("finishMenu");
+  const percent = Math.round((score / currentQuiz.length) * 100);
+  finalScore.innerHTML = `
+    Score: ${score}/${currentQuiz.length} (${percent}%)
+    <hr>
+    ${wrongAnswers.map(w => `
+      <p><strong>${w.question}</strong><br>
+      <span style="color:red">Your Answer: ${w.selected}</span><br>
+      <span style="color:lightgreen">Correct Answer: ${w.correct}</span>
+      </p>
+    `).join("")}
+  `;
 
-  const quiz = getActiveQuiz();
-  let correct = 0;
-  let review = "";
-
-  quiz.questions.forEach((q, i) => {
-    if (userAnswers[i] === q.correct) {
-      correct++;
-    } else {
-      review += `
-        <div class="card">
-          <strong>${q.q}</strong><br>
-          <span style="color:red">Your answer: ${q.answers[userAnswers[i]]}</span><br>
-          <span style="color:#4caf50">Correct answer: ${q.answers[q.correct]}</span>
-        </div>
-      `;
-    }
-  });
-
-  const percent = Math.round((correct / quiz.questions.length) * 100);
-  $("finalScore").innerHTML =
-    `Score: ${correct}/${quiz.questions.length} (${percent}%)<br><br>${review}`;
-
-  clearProgress();
+  localStorage.removeItem("quizProgress");
 }
 
 function restartQuiz() {
-  startQuiz(activeQuizId);
+  finishMenu.classList.add("hidden");
+  startQuiz();
 }
 
 function exitQuiz() {
-  backToMenu();
+  finishMenu.classList.add("hidden");
+  builder.classList.remove("hidden");
 }
 
-/* =========================
-   PROGRESS
-========================= */
-
+/***********************
+  PROGRESS + STORAGE
+************************/
 function updateProgress() {
-  $("progressBar").style.width =
-    ((currentIndex / getActiveQuiz().questions.length) * 100) + "%";
+  const percent = ((quizIndex) / currentQuiz.length) * 100;
+  progressBar.style.width = percent + "%";
 }
 
-/* =========================
-   INIT
-========================= */
+function saveData() {
+  localStorage.setItem("quizzes", JSON.stringify(quizzes));
+}
 
-window.onload = () => {
-  loadApp();
-  renderQuizList();
-  show("menu");
-
-  if (quizActive && activeQuizId) {
-    if (confirm("Resume your quiz?")) {
-      show("quiz");
-      showQuestion();
-    }
-  }
-};
+function saveProgress() {
+  localStorage.setItem("quizProgress", JSON.stringify({
+    quizIndex,
+    score,
+    currentQuiz,
+    wrongAnswers
+  }));
+}
