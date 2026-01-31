@@ -250,3 +250,11 @@ function saveProgress() {
     wrongAnswers
   }));
 }
+// Expose functions to HTML buttons
+window.addQuestion = addQuestion;
+window.startQuiz = startQuiz;
+window.nextQuestion = nextQuestion;
+window.restartQuiz = restartQuiz;
+window.exitQuiz = exitQuiz;
+window.editQuestion = editQuestion;
+window.deleteQuestion = deleteQuestion;
