@@ -55,3 +55,36 @@ h2, h3, p { text-align: center; }
   display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 10px 0;
 }
 .button-wrapper button { width: 90%; max-width: 400px; }
+
+.button-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: #4f46e5;
+  color: white;
+}
+
+.btn-secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-danger {
+  background: #7e4a4a;
+  color: white;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
