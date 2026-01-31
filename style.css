@@ -1,96 +1,57 @@
-/* ===== GLOBAL ===== */
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+  font-family: system-ui;
   background: #0f172a;
   color: #e5e7eb;
-  padding: 20px;
-  margin: 0;
+  padding: 10px;
 }
 
-.hidden { display: none; }
+.hidden { display: none !important; }
 
-/* ===== INPUTS & SELECTS ===== */
-input, select {
-  width: 50%;
-  padding: 16px;
-  margin: 16px 0;
-  border-radius: 8px;
+input, select, button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 6px;
   border: none;
-  font-size: 16px;
+  box-sizing: border-box;
 }
 
-/* ===== BUTTONS ===== */
 button {
-  width: 50%;
-  padding: 16px;
-  margin: 16px 0;
-  border-radius: 8px;
-  border: none;
-  font-size: 16px;
   background: #2563eb;
   color: white;
-}
-
-button.secondary {
-  background: #334155;
-}
-
-/* ===== QUIZ CHOICES ===== */
-#choices button {
-  display: block;
   width: 50%;
-  margin: 16px 0;
-  text-align: left;
   padding: 16px;
-  background: #1e293b;
-  font-size: 16px;
-}
-
-#choices button.selected {
-  background: #22c55e;
-  color: white;
-}
-
-/* ===== PROGRESS ===== */
-#progressContainer {
-  height: 12px;
-  background: #1e293b;
-  margin: 15px 0;
+  margin: 10px 0;
   border-radius: 6px;
-  overflow: hidden;
 }
 
-#progressBar {
-  height: 100%;
-  width: 0%;
-  background: #22c55e;
-  transition: width 0.2s ease;
+#choices button {
+  background: #1e293b;
+  width: 90%;
+  max-width: 400px;
+  margin: 6px 0;
 }
 
-/* ===== CARDS ===== */
-.card {
-  background: #020617;
-  padding: 14px;
-  border-radius: 10px;
-  margin-bottom: 12px;
-}
+#choices button.selected { background: #22c55e; }
 
+#progressContainer { height: 8px; background: #1e293b; margin-bottom: 12px; }
+#progressBar { height: 100%; width: 0%; background: #22c55e; }
+
+.card { background: #020617; padding: 10px; border-radius: 8px; margin-bottom: 6px; }
 .correct { color: #22c55e; }
 .wrong { color: #ef4444; }
 
-/* ===== HEADINGS ===== */
-h2, h3 {
-  margin: 15px 0;
+h2, h3, p { text-align: center; }
+
+#choices { display: flex; flex-direction: column; align-items: center; }
+
+.input-wrapper { width: 100%; max-width: 400px; margin: 10px auto; }
+.input-wrapper input, .input-wrapper select {
+  width: 100%; height: 50px; padding: 0 14px; font-size: 16px;
+  border-radius: 8px; border: 1px solid #333; background: #1e293b; color: #fff;
 }
 
-/* ===== MOBILE FRIENDLY ===== */
-@media (max-width: 600px) {
-  body {
-    padding: 15px;
-  }
-
-  input, select, button, #choices button {
-    font-size: 18px;
-    padding: 16px;
-  }
+.button-wrapper {
+  display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 10px 0;
 }
+.button-wrapper button { width: 90%; max-width: 400px; }
