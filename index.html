@@ -1,16 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz App</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz App</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>Quiz Builder</h1>
+<!-- ===== Main Menu ===== -->
+<div id="mainMenu">
+  <h1>Quiz App</h1>
+  <button id="goBuilder">Create / Edit Quiz</button>
+  <button id="goQuiz">Take Quiz</button>
+</div>
 
-<div id="builder">
+<!-- ===== Builder ===== -->
+<div id="builder" class="hidden">
+  <h2>Add Question</h2>
   <input id="questionInput" placeholder="Enter question">
 
   <select id="questionType">
@@ -32,43 +39,26 @@
   </select>
 
   <button id="addBtn">Add Question</button>
-  <button id="startBtn">Start Quiz</button>
 
   <h3>Your Questions</h3>
   <div id="questionList"></div>
+
+  <button id="backToMenu">Back to Menu</button>
 </div>
 
+<!-- ===== Quiz ===== -->
 <div id="quiz" class="hidden">
   <h2 id="quizQuestion"></h2>
   <div id="choices"></div>
   <button id="nextBtn">Next</button>
 </div>
 
+<!-- ===== Results ===== -->
 <div id="results" class="hidden">
-  <h2>Quiz Finished</h2>
+  <h2>Quiz Finished!</h2>
   <p id="scoreText"></p>
   <div id="review"></div>
-  <button id="backBtn">Back to Builder</button>
-</div>
-
-  <div id="mainMenu">
-  <h1>Quiz App</h1>
-  <button id="goBuilder">Create / Edit Quiz</button>
-  <button id="goQuiz">Take Quiz</button>
-</div>
-
-<div id="builder" class="hidden">
-  <!-- builder inputs same as before -->
-  <div id="questionList" style="height:300px; overflow-y:auto; border:1px solid #333; padding:10px;"></div>
-  <button id="backToMenu">Back to Menu</button>
-</div>
-
-<div id="quiz" class="hidden">
-  <!-- quiz UI same as before -->
-</div>
-
-<div id="results" class="hidden">
-  <!-- results UI same as before -->
+  <button id="backBtn">Back to Menu</button>
 </div>
 
 <script src="app.js"></script>
