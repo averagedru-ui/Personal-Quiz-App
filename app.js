@@ -239,3 +239,18 @@ function backToBuilder() {
   results.classList.add("hidden");
   builder.classList.remove("hidden");
 }
+
+const mainMenu = document.getElementById("mainMenu");
+document.getElementById("goBuilder").onclick = () => {
+  mainMenu.classList.add("hidden");
+  builder.classList.remove("hidden");
+};
+document.getElementById("goQuiz").onclick = () => {
+  if(questions.length===0){ alert("Add questions first"); return; }
+  mainMenu.classList.add("hidden");
+  startQuiz();
+};
+document.getElementById("backToMenu").onclick = () => {
+  builder.classList.add("hidden");
+  mainMenu.classList.remove("hidden");
+};
