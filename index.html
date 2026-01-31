@@ -81,23 +81,35 @@
   <div class="button-wrapper">
     <button onclick="backToMenu()">Back to Menu</button>
   </div>
+
 </div>
+
 
 <!-- ===== QUIZ ===== -->
 <div id="quiz" class="hidden">
   <h2 id="questionText"></h2>
-  <div id="progressContainer"><div id="progressBar"></div></div>
-  <div id="choices"></div>
-  <div class="button-wrapper"><button onclick="nextQuestion()">Next</button></div>
-</div>
 
+  <div id="progressContainer">
+    <div id="progressBar"></div>
+  </div>
+
+  <div id="choices"></div>
+
+  <div class="button-wrapper">
+    <button onclick="prevQuestion()">Back</button>
+    <button onclick="nextQuestion()">Next</button>
+  </div>
+</div>
 <!-- ===== RESULTS ===== -->
 <div id="results" class="hidden">
   <h2>Results</h2>
   <p id="finalScore"></p>
   <div id="review"></div>
-  <div class="button-wrapper"><button onclick="backToMenu()">Back to Menu</button></div>
+  <div class="button-wrapper">
+    <button onclick="backToMenu()">Back to Menu</button>
+  </div>
 </div>
+
 
 <script src="app.js"></script>
 </body>
