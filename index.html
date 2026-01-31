@@ -1,63 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz App</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Manager</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- ===== MAIN MENU ===== -->
+<div id="menu">
+  <h2>Quiz Manager</h2>
+  <div class="button-wrapper">
+    <button onclick="showBuilder()">Build Quiz</button>
+    <button onclick="showQuizSelection()">Take Quiz</button>
+  </div>
+</div>
+
 <!-- ===== BUILDER ===== -->
-<div id="builder">
+<div id="builder" class="hidden">
   <h2>Quiz Builder</h2>
 
-  <input id="q" placeholder="Question">
+  <div class="input-wrapper">
+    <input id="quizName" placeholder="Quiz Name">
+  </div>
 
-  <select id="type">
-    <option value="mc">Multiple Choice</option>
-    <option value="tf">True / False</option>
-  </select>
+  <div class="input-wrapper">
+    <input id="q" placeholder="Enter your question">
+  </div>
 
+  <div class="input-wrapper">
+    <select id="type">
+      <option value="mc">Multiple Choice</option>
+      <option value="tf">True / False</option>
+    </select>
+  </div>
+
+  <!-- Multiple Choice Inputs -->
   <div id="mc">
-    <input id="a1" placeholder="Answer A">
-    <input id="a2" placeholder="Answer B">
-    <input id="a3" placeholder="Answer C">
-    <input id="a4" placeholder="Answer D">
-    <select id="correct">
-      <option value="">Correct Answer</option>
-      <option value="0">A</option>
-      <option value="1">B</option>
-      <option value="2">C</option>
-      <option value="3">D</option>
-    </select>
+    <div class="input-wrapper"><input id="a1" placeholder="Answer A"></div>
+    <div class="input-wrapper"><input id="a2" placeholder="Answer B"></div>
+    <div class="input-wrapper"><input id="a3" placeholder="Answer C"></div>
+    <div class="input-wrapper"><input id="a4" placeholder="Answer D"></div>
+    <div class="input-wrapper">
+      <select id="correct">
+        <option value="">Correct Answer</option>
+        <option value="0">A</option>
+        <option value="1">B</option>
+        <option value="2">C</option>
+        <option value="3">D</option>
+      </select>
+    </div>
   </div>
 
+  <!-- True/False Inputs -->
   <div id="tf" class="hidden">
-    <select id="tfCorrect">
-      <option value="">Correct Answer</option>
-      <option value="0">True</option>
-      <option value="1">False</option>
-    </select>
+    <div class="input-wrapper">
+      <select id="tfCorrect">
+        <option value="">Correct Answer</option>
+        <option value="0">True</option>
+        <option value="1">False</option>
+      </select>
+    </div>
   </div>
 
-  <button onclick="addQuestion()">Add Question</button>
-  <button onclick="startQuiz()">Start Quiz</button>
+  <div class="button-wrapper">
+    <button onclick="addQuestion()">Add Question</button>
+    <button onclick="saveQuiz()">Save Quiz</button>
+    <button onclick="backToMenu()">Back to Menu</button>
+  </div>
 
   <h3>Questions</h3>
   <div id="questionList"></div>
 </div>
 
+<!-- ===== QUIZ SELECTION ===== -->
+<div id="quizSelect" class="hidden">
+  <h2>Select a Quiz</h2>
+  <div id="quizList"></div>
+  <div class="button-wrapper">
+    <button onclick="backToMenu()">Back to Menu</button>
+  </div>
+</div>
+
 <!-- ===== QUIZ ===== -->
 <div id="quiz" class="hidden">
   <h2 id="questionText"></h2>
-
-  <div id="progressContainer">
-    <div id="progressBar"></div>
-  </div>
-
+  <div id="progressContainer"><div id="progressBar"></div></div>
   <div id="choices"></div>
-  <button onclick="nextQuestion()">Next</button>
+  <div class="button-wrapper"><button onclick="nextQuestion()">Next</button></div>
 </div>
 
 <!-- ===== RESULTS ===== -->
@@ -65,30 +96,7 @@
   <h2>Results</h2>
   <p id="finalScore"></p>
   <div id="review"></div>
-  <button onclick="restart()">Back to Builder</button>
-</div>
-  <!-- Multiple Choice Inputs -->
-<div id="mc">
-  <input id="a1" placeholder="Answer A">
-  <input id="a2" placeholder="Answer B">
-  <input id="a3" placeholder="Answer C">
-  <input id="a4" placeholder="Answer D">
-  <select id="correct">
-    <option value="">Correct Answer</option>
-    <option value="0">A</option>
-    <option value="1">B</option>
-    <option value="2">C</option>
-    <option value="3">D</option>
-  </select>
-</div>
-
-<!-- True / False Inputs -->
-<div id="tf" class="hidden">
-  <select id="tfCorrect">
-    <option value="">Correct Answer</option>
-    <option value="0">True</option>
-    <option value="1">False</option>
-  </select>
+  <div class="button-wrapper"><button onclick="backToMenu()">Back to Menu</button></div>
 </div>
 
 <script src="app.js"></script>
