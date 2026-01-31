@@ -67,6 +67,29 @@
   <div id="review"></div>
   <button onclick="restart()">Back to Builder</button>
 </div>
+  <!-- Multiple Choice Inputs -->
+<div id="mc">
+  <input id="a1" placeholder="Answer A">
+  <input id="a2" placeholder="Answer B">
+  <input id="a3" placeholder="Answer C">
+  <input id="a4" placeholder="Answer D">
+  <select id="correct">
+    <option value="">Correct Answer</option>
+    <option value="0">A</option>
+    <option value="1">B</option>
+    <option value="2">C</option>
+    <option value="3">D</option>
+  </select>
+</div>
+
+<!-- True / False Inputs -->
+<div id="tf" class="hidden">
+  <select id="tfCorrect">
+    <option value="">Correct Answer</option>
+    <option value="0">True</option>
+    <option value="1">False</option>
+  </select>
+</div>
 
 <script src="app.js"></script>
 </body>
