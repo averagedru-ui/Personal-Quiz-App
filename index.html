@@ -9,12 +9,10 @@
 <body>
 
 <!-- ===== MAIN MENU ===== -->
-<div id="menu">
-  <h2>Quiz Manager</h2>
-  <div class="button-wrapper">
-    <button onclick="showBuilder()">Build Quiz</button>
-    <button onclick="showQuizSelection()">Take Quiz</button>
-  </div>
+<div id="mainMenu" class="button-wrapper">
+  <button type="button" onclick="showBuilder()">Build Quiz</button>
+  <button type="button" onclick="showQuizSelection()">Take Quiz</button>
+  <button type="button" onclick="showFlashMenu()">Flashcards</button>
 </div>
 
 <!-- ===== BUILDER ===== -->
@@ -28,6 +26,10 @@
   <div class="input-wrapper">
     <input id="q" placeholder="Enter your question">
   </div>
+  
+  <div class="input-wrapper">
+  <textarea id="explanation" placeholder="Why is the correct answer correct?"></textarea>
+  </div>
 
   <div class="input-wrapper">
     <select id="type">
@@ -35,6 +37,23 @@
       <option value="tf">True / False</option>
     </select>
   </div>
+  <h3>Bulk Import Questions</h3>
+<div class="input-wrapper">
+  <textarea id="bulkInput" placeholder="Paste multiple questions here..."></textarea>
+</div>
+
+<div class="button-wrapper">
+  <button onclick="importBulkQuestions()">Import Questions</button>
+</div>
+
+<h3>Import Answer Key</h3>
+<div class="input-wrapper">
+  <textarea id="bulkAnswerKey" placeholder="Paste answer key here..."></textarea>
+</div>
+<div class="button-wrapper">
+  <button onclick="applyAnswerKey()">Apply Answer Key</button>
+</div>
+
 
   <!-- Multiple Choice Inputs -->
   <div id="mc">
@@ -83,7 +102,98 @@
   </div>
 
 </div>
+<!-- ===== FLASHCARD MENU ===== -->
+<div id="flashMenu" class="hidden">
+  <h2>Flashcards</h2>
+  <div class="button-wrapper">
+    <button onclick="showFlashBuilder()">Build Flashcards</button>
+    <button onclick="showFlashDeckSelection()">Study Flashcards</button>
+    <button onclick="backToMenu()">Back to Menu</button>
+  </div>
+</div>
 
+<!-- ===== FLASHCARD BUILDER ===== -->
+<div id="flashBuilder" class="hidden">
+  <h2>Flashcard Builder</h2>
+
+  <div class="input-wrapper">
+    <input id="deckName" placeholder="Deck Name (required to save)">
+  </div>
+
+  <p style="text-align:center; color:#94a3b8; font-size:0.95rem; margin: -10px 0 20px;">
+    Enter a unique deck name above to create/save a new deck
+  </p>
+
+  <!-- Single card inputs remain the same -->
+  <h3>Add Single Card</h3>
+  <div class="input-wrapper">
+    <textarea id="cardFront" placeholder="Front of card"></textarea>
+  </div>
+  <div class="input-wrapper">
+    <textarea id="cardBack" placeholder="Back of card"></textarea>
+  </div>
+  <div class="button-wrapper">
+    <button onclick="addFlashcard()">Add Card</button>
+  </div>
+
+  <!-- Bulk remains the same -->
+  <h3>Bulk Import Cards</h3>
+  <div class="input-wrapper">
+    <textarea id="bulkFlashInput" placeholder="Paste multiple cards here...\n\nFlashcard 1\nFront: Term\nBack: Definition\n\nFlashcard 2\n..."></textarea>
+  </div>
+  <div class="button-wrapper">
+    <button onclick="importBulkFlashcards()">Import Bulk Cards</button>
+    <button onclick="saveDeck()">Save Deck</button>
+    <button onclick="showFlashMenu()">Back</button>
+  </div>
+
+  <h3>Cards (current deck preview)</h3>
+  <div id="cardList"></div>
+</div>
+
+  <h3>Cards</h3>
+  <div id="cardList"></div>
+</div>
+
+<!-- ===== FLASHCARD DECK SELECTION ===== -->
+<div id="flashDeckSelect" class="hidden">
+  <h2>Select a Deck</h2>
+  <div id="deckList"></div>
+  <div class="button-wrapper">
+    <button onclick="showFlashBuilder()">Create New Deck</button>
+    <button onclick="showFlashMenu()">Back</button>
+  </div>
+</div>
+
+<!-- ===== FLASHCARD STUDY ===== -->
+<div id="flashStudy" class="hidden">
+  <div class="study-options" style="text-align: center; margin: 20px 0; font-size: 1.1rem;">
+    <label>
+      <input type="checkbox" id="startWithBack"> Start with Back side first (e.g., definition → term)
+    </label>
+    <br><br>
+    <label>
+      <input type="checkbox" id="shuffleDeck" checked> Shuffle cards (random order)
+    </label>
+  </div>
+
+  <div class="scene">
+    <div id="flashCard" class="flash-card">
+      <div class="flash-card-front flash-card-face">
+        <h2 id="flashFront"></h2>
+      </div>
+      <div class="flash-card-back flash-card-face">
+        <h2 id="flashBack"></h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="button-wrapper">
+    <button onclick="flipCard()">Flip</button>
+    <button onclick="prevCard()">Back</button>
+    <button onclick="nextCard()">Next</button>
+  </div>
+</div>
 
 <!-- ===== QUIZ ===== -->
 <div id="quiz" class="hidden">
@@ -100,6 +210,7 @@
     <button onclick="nextQuestion()">Next</button>
   </div>
 </div>
+
 <!-- ===== RESULTS ===== -->
 <div id="results" class="hidden">
   <h2>Results</h2>
@@ -112,5 +223,25 @@
 
 
 <script src="app.js"></script>
+
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAkLkC2TIY_Yi3hFUMjJcs7XayktAAmOVU",
+    authDomain: "quiz-app-d6c82.firebaseapp.com",
+    projectId: "quiz-app-d6c82",
+    storageBucket: "quiz-app-d6c82.firebasestorage.app",
+    messagingSenderId: "785941499108",
+    appId: "1:785941499108:web:fbbdc51cbfb07ce59bf0f1"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
 </body>
 </html>
