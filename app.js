@@ -1,11 +1,19 @@
+// app.js
+
 // ===== Elements =====
+const mainMenu = document.querySelector(".button-wrapper");
 const builder = document.getElementById("builder");
 const quizSelect = document.getElementById("quizSelect");
-const menu = document.getElementById("menu");
 const quizDiv = document.getElementById("quiz");
 const results = document.getElementById("results");
 
+const flashMenu = document.getElementById("flashMenu");
+const flashBuilder = document.getElementById("flashBuilder");
+const flashDeckSelect = document.getElementById("flashDeckSelect");
+const flashStudy = document.getElementById("flashStudy");
+
 const qInput = document.getElementById("q");
+const explanationInput = document.getElementById("explanation");
 const typeSelect = document.getElementById("type");
 const mcDiv = document.getElementById("mc");
 const tfDiv = document.getElementById("tf");
@@ -13,7 +21,7 @@ const a1 = document.getElementById("a1");
 const a2 = document.getElementById("a2");
 const a3 = document.getElementById("a3");
 const a4 = document.getElementById("a4");
-const correct = document.getElementById("correct");
+const correctSelect = document.getElementById("correct");
 const tfCorrect = document.getElementById("tfCorrect");
 const questionList = document.getElementById("questionList");
 const quizNameInput = document.getElementById("quizName");
@@ -25,55 +33,81 @@ const finalScore = document.getElementById("finalScore");
 const review = document.getElementById("review");
 const quizListDiv = document.getElementById("quizList");
 
+// Flashcard elements
+const deckNameInput = document.getElementById("deckName");
+const cardFrontInput = document.getElementById("cardFront");
+const cardBackInput = document.getElementById("cardBack");
+const cardList = document.getElementById("cardList");
+const deckList = document.getElementById("deckList");
+const flashFrontEl = document.getElementById("flashFront");
+const flashBackEl = document.getElementById("flashBack");
+
 // ===== Variables =====
-let quizzes = [];
+let quizzes = JSON.parse(localStorage.getItem("quizzes") || "[]");
 let currentQuiz = null;
 let currentQuestions = [];
 let currentIndex = 0;
-let answers = [];
+let selectedAnswers = [];
 
-// ===== Load quizzes from localStorage =====
-if (localStorage.getItem("quizzes")) {
-  quizzes = JSON.parse(localStorage.getItem("quizzes"));
+let decks = JSON.parse(localStorage.getItem("flashDecks") || "{}"); // { "DeckName": [{front,back}, ...] }
+let currentDeckName = null;
+let currentDeck = [];
+let currentCardIndex = 0;
+let isFlipped = false;
+let startWithBack = false;
+let shouldShuffle = true;
+
+let editingQuestionIndex = null;
+
+// ===== Helpers =====
+function hideAllScreens() {
+  const screens = [
+    "builder", "quizSelect", "quiz", "results",
+    "flashMenu", "flashBuilder", "flashDeckSelect", "flashStudy"
+  ];
+  screens.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
+  });
 }
 
-// ===== Persist quizzes =====
-function saveQuizzesToStorage() {
-  localStorage.setItem("quizzes", JSON.stringify(quizzes));
-}
-
-// ===== Show / Hide Sections =====
-function showBuilder() {
-  menu.classList.add("hidden");
-  quizSelect.classList.add("hidden");
-  results.classList.add("hidden");
-  quizDiv.classList.add("hidden");
-  builder.classList.remove("hidden");
-  questionList.innerHTML = "";
-  currentQuestions = [];
-  answers = [];
-  currentIndex = 0;
-}
-
-function showQuizSelection() {
-  menu.classList.add("hidden");
-  builder.classList.add("hidden");
-  results.classList.add("hidden");
-  quizDiv.classList.add("hidden");
-  quizSelect.classList.remove("hidden");
-  renderQuizList();
+function showScreen(id) {
+  hideAllScreens();
+  if (id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove("hidden");
+  }
+  
+  // Always hide main menu when showing any other screen
+  const menu = document.getElementById("mainMenu");
+  if (menu) {
+    menu.classList.add("hidden-menu");
+  }
 }
 
 function backToMenu() {
-  builder.classList.add("hidden");
-  quizSelect.classList.add("hidden");
-  quizDiv.classList.add("hidden");
-  results.classList.add("hidden");
-  menu.classList.remove("hidden");
-  renderQuizList();
+  showScreen(""); // hides all other screens
+  
+  const menu = document.getElementById("mainMenu");
+  if (menu) {
+    menu.classList.remove("hidden-menu");
+    // Force re-show after transition
+    setTimeout(() => {
+      menu.style.opacity = "1";
+      menu.style.transform = "translateY(0)";
+      menu.style.visibility = "visible";
+      menu.style.height = "auto";
+      menu.style.margin = ""; // reset if needed
+    }, 50); // small delay to let fade-out finish
+  }
 }
 
-// ===== Toggle MC / TF =====
+document.addEventListener("DOMContentLoaded", () => {
+  hideAllScreens();
+  document.getElementById("mainMenu").classList.remove("hidden-menu");
+});
+
+// ===== Quiz Builder =====
 typeSelect.addEventListener("change", () => {
   if (typeSelect.value === "tf") {
     mcDiv.classList.add("hidden");
@@ -84,247 +118,469 @@ typeSelect.addEventListener("change", () => {
   }
 });
 
-// ===== Add Question =====
 function addQuestion() {
   const text = qInput.value.trim();
   if (!text) return alert("Enter a question!");
+
+  const explanation = explanationInput.value.trim();
+
   let question;
   if (typeSelect.value === "mc") {
+    const answers = [a1.value.trim(), a2.value.trim(), a3.value.trim(), a4.value.trim()];
+    if (answers.some(a => !a)) return alert("Fill all 4 answers!");
     question = {
+      type: "mc",
       q: text,
-      answers: [a1.value, a2.value, a3.value, a4.value],
-      correct: parseInt(correct.value)
+      answers,
+      correct: parseInt(correctSelect.value),
+      explanation
     };
   } else {
     question = {
+      type: "tf",
       q: text,
-      answers: ["True","False"],
-      correct: parseInt(tfCorrect.value)
+      answers: ["True", "False"],
+      correct: parseInt(tfCorrect.value),
+      explanation
     };
   }
-  currentQuestions.push(question);
+
+  if (isNaN(question.correct)) return alert("Select the correct answer!");
+
+  if (editingQuestionIndex !== null) {
+    currentQuestions[editingQuestionIndex] = question;
+    editingQuestionIndex = null;
+  } else {
+    currentQuestions.push(question);
+  }
+
   renderQuestionList();
-  qInput.value = a1.value = a2.value = a3.value = a4.value = "";
-  correct.value = tfCorrect.value = "";
+  clearQuestionForm();
 }
 
-// ===== Render Question List =====
+function clearQuestionForm() {
+  qInput.value = "";
+  explanationInput.value = "";
+  a1.value = a2.value = a3.value = a4.value = "";
+  correctSelect.value = "";
+  tfCorrect.value = "";
+}
+
 function renderQuestionList() {
   questionList.innerHTML = "";
   currentQuestions.forEach((q, i) => {
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
-      <strong>${q.q}</strong>
-      <button onclick="deleteQuestion(${i})">Delete</button>
-      <button onclick="editQuestion(${i})">Edit</button>
+      <strong>${q.q}</strong><br>
+      <small>Type: ${q.type.toUpperCase()}</small>
+      <div class="button-row">
+        <button onclick="editQuestion(${i})">Edit</button>
+        <button onclick="deleteQuestion(${i})">Delete</button>
+      </div>
     `;
     questionList.appendChild(card);
   });
 }
 
-// ===== Delete Question =====
 function deleteQuestion(index) {
-  if (!confirm("Delete this question?")) return;
-  currentQuestions.splice(index, 1);
-  renderQuestionList();
+  if (confirm("Delete this question?")) {
+    currentQuestions.splice(index, 1);
+    renderQuestionList();
+  }
 }
 
-// ===== Edit Question =====
 function editQuestion(index) {
   const q = currentQuestions[index];
   qInput.value = q.q;
-  if (q.answers.length === 2) {
+  explanationInput.value = q.explanation || "";
+
+  if (q.type === "tf") {
     typeSelect.value = "tf";
-    mcDiv.classList.add("hidden");
     tfDiv.classList.remove("hidden");
+    mcDiv.classList.add("hidden");
     tfCorrect.value = q.correct;
   } else {
     typeSelect.value = "mc";
     mcDiv.classList.remove("hidden");
     tfDiv.classList.add("hidden");
-    a1.value = q.answers[0];
-    a2.value = q.answers[1];
-    a3.value = q.answers[2];
-    a4.value = q.answers[3];
-    correct.value = q.correct;
+    [a1.value, a2.value, a3.value, a4.value] = q.answers;
+    correctSelect.value = q.correct;
   }
-  currentQuestions.splice(index, 1);
-  renderQuestionList();
+
+  editingQuestionIndex = index;
 }
 
-// ===== Save Quiz =====
 function saveQuiz() {
   const name = quizNameInput.value.trim();
   if (!name) return alert("Enter a quiz name!");
-  quizzes.push({ name, questions: [...currentQuestions] });
-  saveQuizzesToStorage();
-  quizNameInput.value = "";
+  if (currentQuestions.length === 0) return alert("Add at least one question!");
+
+  if (currentQuiz) {
+    const idx = quizzes.findIndex(qz => qz.name === currentQuiz.name);
+    if (idx !== -1) quizzes[idx] = { name, questions: [...currentQuestions] };
+  } else {
+    quizzes.push({ name, questions: [...currentQuestions] });
+  }
+
+  localStorage.setItem("quizzes", JSON.stringify(quizzes));
+  currentQuiz = null;
   currentQuestions = [];
-  answers = [];
-  questionList.innerHTML = "";
-  alert("Quiz saved!");
+  quizNameInput.value = "";
+  clearQuestionForm();
+  renderQuestionList();
   showQuizSelection();
 }
 
-// ===== Render Quiz List =====
+// ===== Quiz Selection & Play =====
+
 function renderQuizList() {
   quizListDiv.innerHTML = "";
   quizzes.forEach((qz, i) => {
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
-      <strong>${qz.name}</strong>
+      <strong>${qz.name}</strong> (${qz.questions.length} questions)
       <div class="button-row">
-        <button class="btn-primary" onclick="startQuiz(${i})">Start</button>
-        <button class="btn-secondary" onclick="editQuiz(${i})">Edit</button>
-        <button class="btn-danger" onclick="deleteQuiz(${i})">Delete</button>
+        <button onclick="startQuiz(${i})">Start</button>
+        <button onclick="editQuiz(${i})">Edit</button>
+        <button onclick="deleteQuiz(${i})">Delete</button>
       </div>
     `;
     quizListDiv.appendChild(card);
   });
 }
 
-// ===== Delete Quiz =====
 function deleteQuiz(index) {
-  if (!confirm("Delete this quiz?")) return;
-  quizzes.splice(index, 1);
-  saveQuizzesToStorage();
-  renderQuizList();
+  if (confirm("Delete this quiz?")) {
+    quizzes.splice(index, 1);
+    localStorage.setItem("quizzes", JSON.stringify(quizzes));
+    renderQuizList();
+  }
 }
 
-// ===== Start Quiz =====
 function startQuiz(index) {
-  currentQuiz = quizzes[index];
-
-  currentQuestions = currentQuiz.questions.map(q => {
-    const shuffled = [...q.answers]
-      .map(a => ({ a, sort: Math.random() }))
-      .sort((x, y) => x.sort - y.sort)
-      .map(x => x.a);
-
-    return {
-      ...q,
-      shuffledAnswers: shuffled,
-      shuffledCorrect: shuffled.indexOf(q.answers[q.correct])
-    };
-  });
-
-  currentIndex = 0;
-  answers = [];
-
-  quizSelect.classList.add("hidden");
-  builder.classList.add("hidden");
-  quizDiv.classList.remove("hidden");
-
-  showQuestion();
-}
-
-
-// ===== Edit Quiz =====
-function editQuiz(index) {
   currentQuiz = quizzes[index];
   currentQuestions = [...currentQuiz.questions];
   currentIndex = 0;
-  answers = [];
-  quizSelect.classList.add("hidden");
-  builder.classList.remove("hidden");
-  questionList.innerHTML = "";
-  renderQuestionList();
+  selectedAnswers = new Array(currentQuestions.length).fill(null);
+
+  showScreen("quiz");
+  showQuestion();
 }
 
-// ===== Show Question =====
-function showQuestion() {
-  const qObj = currentQuestions[currentIndex];
-  questionText.innerText = qObj.q;
-  choices.innerHTML = "";
+function editQuiz(index) {
+  currentQuiz = quizzes[index];
+  currentQuestions = [...currentQuiz.questions];
+  quizNameInput.value = currentQuiz.name;
+  renderQuestionList();
+  showScreen("builder");
+}
 
- (qObj.shuffledAnswers || qObj.answers).forEach((ans, i) => {
-    const btn = document.createElement("button");
-    btn.innerText = qObj.answers.length === 2 ? ans : `${String.fromCharCode(65+i)}. ${ans}`;
-    btn.onclick = () => {
-      document.querySelectorAll("#choices button").forEach(b => b.classList.remove("selected"));
-      btn.classList.add("selected");
-      answers[currentIndex] = i;
-    };
-    if (answers[currentIndex] === i) btn.classList.add("selected");
-    choices.appendChild(btn);
+// ===== Quiz Taking =====
+function showQuestion() {
+  if (currentIndex >= currentQuestions.length) return finishQuiz();
+
+  const q = currentQuestions[currentIndex];
+  questionText.innerText = q.q;
+
+  if (choices.children.length === 0 || choices.dataset.questionIndex !== String(currentIndex)) {
+    choices.innerHTML = "";
+    choices.dataset.questionIndex = currentIndex;
+
+    q.answers.forEach((ans, i) => {
+      const btn = document.createElement("button");
+      btn.textContent = ans;
+      btn.dataset.index = i;
+      btn.onclick = () => selectAnswer(i);
+      choices.appendChild(btn);
+    });
+  }
+
+  Array.from(choices.children).forEach(btn => {
+    btn.classList.toggle("selected", Number(btn.dataset.index) === selectedAnswers[currentIndex]);
   });
 
-  progressBar.style.width = ((currentIndex) / currentQuestions.length) * 100 + "%";
-
-  // Add Back button dynamically if not exists
-  let buttonWrapper = document.querySelector("#quiz .button-wrapper");
-  buttonWrapper.innerHTML = `
-    <button id="backBtn">Back</button>
-    <button id="nextBtn">${currentIndex === currentQuestions.length - 1 ? "Finish" : "Next"}</button>
-  `;
-
-  const backBtn = document.getElementById("backBtn");
-  const nextBtn = document.getElementById("nextBtn");
-
-  backBtn.disabled = currentIndex === 0;
-  backBtn.onclick = prevQuestion;
-  nextBtn.onclick = nextQuestion;
+  progressBar.style.width = ((currentIndex + 1) / currentQuestions.length) * 100 + "%";
 }
 
-// ===== Next / Previous Question =====
+function selectAnswer(index) {
+  selectedAnswers[currentIndex] = index;
+  showQuestion();
+}
+
 function nextQuestion() {
-  if (answers[currentIndex] == null) return alert("Select an answer!");
+  if (selectedAnswers[currentIndex] === null) {
+    return alert("Please select an answer.");
+  }
   currentIndex++;
-  if (currentIndex >= currentQuestions.length) finishQuiz();
-  else showQuestion();
+  showQuestion();
 }
 
 function prevQuestion() {
-  if (currentIndex === 0) return;
+  if (currentIndex <= 0) return;
   currentIndex--;
   showQuestion();
 }
 
-// ===== Finish Quiz =====
 function finishQuiz() {
-  quizDiv.classList.add("hidden");
-  results.classList.remove("hidden");
-  let correctCount = 0;
-  let reviewHTML = "";
-  currentQuestions.forEach((qObj, i) => {
-    if (answers[i] === qObj.shuffledCorrect) correctCount++;
-    else {
-      reviewHTML += `
-        <div class="card">
-          <strong>${qObj.q}</strong><br>
-          <span class="wrong">
-  Your answer: ${
-    answers[i] != null
-      ? (qObj.shuffledAnswers || qObj.answers)[answers[i]]
-      : "None"
-  }
-</span><br>
-<span class="correct">
-  Correct: ${(qObj.shuffledAnswers || qObj.answers)[qObj.shuffledCorrect]}
-</span>
+  showScreen("results");
 
-        </div>
-      `;
+  let correctCount = 0;
+  let reviewHTML = "<h3>Review</h3>";
+
+  currentQuestions.forEach((q, i) => {
+    const userAns = selectedAnswers[i];
+    const isCorrect = userAns === q.correct;
+    if (isCorrect) correctCount++;
+
+    reviewHTML += `
+      <div class="review-item ${isCorrect ? 'correct' : 'wrong'}">
+        <p><strong>Q: ${q.q}</strong></p>
+        <p>Your answer: ${q.answers[userAns] ?? "—"}</p>
+        <p>Correct: ${q.answers[q.correct]}</p>
+        ${q.explanation ? `<p><em>Explanation: ${q.explanation}</em></p>` : ""}
+      </div>
+    `;
+  });
+
+  finalScore.textContent = `Score: ${correctCount} / ${currentQuestions.length}`;
+  review.innerHTML = reviewHTML;
+}
+
+// ===== Flashcards - Multiple Decks =====
+function saveDecks() {
+  localStorage.setItem("flashDecks", JSON.stringify(decks));
+}
+
+function addFlashcard() {
+  const front = cardFrontInput.value.trim();
+  const back = cardBackInput.value.trim();
+  if (!front || !back) return alert("Enter both front and back!");
+
+  if (!currentDeckName) return alert("Enter a deck name first!");
+
+  if (!decks[currentDeckName]) decks[currentDeckName] = [];
+  decks[currentDeckName].push({ front, back });
+  saveDecks();
+  renderCardList();
+  cardFrontInput.value = "";
+  cardBackInput.value = "";
+}
+
+function importBulkFlashcards() {
+  const input = document.getElementById("bulkFlashInput").value.trim();
+  if (!input) return alert("Paste some flashcards first!");
+
+  if (!currentDeckName) return alert("Enter a deck name first!");
+
+  let blocks = input.split(/\n\s*\n/).filter(b => b.trim());
+  if (blocks.length <= 1) {
+    const allLines = input.split('\n').map(l => l.trim()).filter(l => l);
+    blocks = [];
+    for (let i = 0; i < allLines.length; i += 3) {
+      const group = allLines.slice(i, i + 3).join('\n');
+      if (group) blocks.push(group);
+    }
+  }
+
+  let importedCount = 0;
+  const errors = [];
+
+  blocks.forEach((block, idx) => {
+    const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+    let frontLine = lines.find(l => l.toLowerCase().startsWith("front:"));
+    let backLine = lines.find(l => l.toLowerCase().startsWith("back:"));
+
+    let front, back;
+    if (frontLine && backLine) {
+      front = frontLine.replace(/^front:\s*/i, '').trim();
+      back = backLine.replace(/^back:\s*/i, '').trim();
+    } else if (lines.length >= 2) {
+      const offset = lines[0].toLowerCase().startsWith("flashcard") ? 1 : 0;
+      front = lines[offset]?.replace(/^front:\s*/i, '').trim();
+      back = lines[offset + 1]?.replace(/^back:\s*/i, '').trim();
+    }
+
+    if (front && back) {
+      if (!decks[currentDeckName]) decks[currentDeckName] = [];
+      decks[currentDeckName].push({ front, back });
+      importedCount++;
+    } else {
+      errors.push(`Card ${idx + 1}: Could not parse`);
     }
   });
-  finalScore.innerText = `${correctCount}/${currentQuestions.length} (${Math.round(correctCount / currentQuestions.length * 100)}%)`;
-  review.innerHTML = reviewHTML || "<p>Perfect score 🎉</p>";
-}
-function shuffleAnswers(question) {
-  const indexed = question.answers.map((text, index) => ({
-    text,
-    index
-  }));
 
-  for (let i = indexed.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+  if (importedCount === 0) {
+    let msg = "No valid cards found.\nExpected:\nFlashcard 1\nFront: ...\nBack: ...\n\n(or blank lines between cards)";
+    if (errors.length) msg += `\n\nIssues:\n${errors.join('\n')}`;
+    return alert(msg);
   }
 
-  question.shuffledAnswers = indexed.map(i => i.text);
-  question.shuffledCorrect = indexed.findIndex(i => i.index === question.correct);
+  saveDecks();
+  renderCardList();
+  document.getElementById("bulkFlashInput").value = "";
+  alert(`Imported ${importedCount} card${importedCount === 1 ? '' : 's'}!`);
 }
 
+function renderCardList() {
+  cardList.innerHTML = "";
+  if (!currentDeckName || !decks[currentDeckName]) {
+    cardList.innerHTML = "<p style='text-align:center; color:#94a3b8;'>No cards yet — add some!</p>";
+    return;
+  }
+  decks[currentDeckName].forEach((card, i) => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <strong>Front:</strong> ${card.front.substring(0, 60)}${card.front.length > 60 ? '...' : ''}<br>
+      <strong>Back:</strong> ${card.back.substring(0, 60)}${card.back.length > 60 ? '...' : ''}
+      <button onclick="deleteFlashcard(${i})">Delete</button>
+    `;
+    cardList.appendChild(div);
+  });
+}
 
+function deleteFlashcard(index) {
+  if (confirm("Delete card?")) {
+    decks[currentDeckName].splice(index, 1);
+    saveDecks();
+    renderCardList();
+  }
+}
+
+function saveDeck() {
+  const name = deckNameInput.value.trim();
+  if (!name) return alert("Enter a deck name!");
+
+  currentDeckName = name;
+  if (!decks[name]) decks[name] = [];
+  saveDecks();
+  alert(`Deck "${name}" saved (${decks[name].length} cards)!`);
+  renderCardList();
+}
+
+function renderDeckList() {
+  deckList.innerHTML = "";
+  const names = Object.keys(decks);
+  if (names.length === 0) {
+    deckList.innerHTML = "<p style='text-align:center; color:#94a3b8;'>No decks yet — create one!</p>";
+    return;
+  }
+  names.forEach(name => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <strong>${name}</strong> (${decks[name].length} cards)
+      <div class="button-row">
+        <button onclick="startDeckStudy('${name.replace(/'/g, "\\'")}')">Study</button>
+        <button onclick="editDeck('${name.replace(/'/g, "\\'")}')">Edit</button>
+        <button onclick="deleteDeck('${name.replace(/'/g, "\\'")}')">Delete</button>
+      </div>
+    `;
+    deckList.appendChild(card);
+  });
+}
+
+function deleteDeck(name) {
+  if (confirm(`Delete "${name}" and all cards?`)) {
+    delete decks[name];
+    saveDecks();
+    renderDeckList();
+  }
+}
+
+function editDeck(name) {
+  currentDeckName = name;
+  deckNameInput.value = name;
+  showScreen("flashBuilder");
+  renderCardList();
+}
+
+function startDeckStudy(name) {
+  currentDeckName = name;
+  currentDeck = [...decks[name]];
+
+  shouldShuffle = document.getElementById("shuffleDeck")?.checked ?? true;
+  startWithBack = document.getElementById("startWithBack")?.checked ?? false;
+
+  if (shouldShuffle) {
+    currentDeck.sort(() => Math.random() - 0.5);
+  }
+
+  currentCardIndex = 0;
+  isFlipped = startWithBack;
+
+  showScreen("flashStudy");
+  showFlashcard();
+}
+
+function showFlashcard() {
+  if (currentCardIndex >= currentDeck.length) {
+    alert("End of deck!");
+    backToMenu();
+    return;
+  }
+
+  const card = currentDeck[currentCardIndex];
+  flashFrontEl.textContent = card.front;
+  flashBackEl.textContent = card.back;
+
+  document.getElementById("flashCard").classList.toggle("flipped", isFlipped);
+}
+
+function flipCard() {
+  isFlipped = !isFlipped;
+  document.getElementById("flashCard").classList.toggle("flipped", isFlipped);
+}
+
+function nextCard() {
+  currentCardIndex++;
+  showFlashcard();
+}
+
+function prevCard() {
+  if (currentCardIndex <= 0) return;
+  currentCardIndex--;
+  showFlashcard();
+}
+
+// ===== Screen Functions =====
+function showBuilder() { showScreen("builder"); }
+function showQuizSelection() {
+  showScreen("quizSelect");
+  renderQuizList();
+}
+function showFlashMenu() { showScreen("flashMenu"); }
+function showFlashBuilder() {
+  currentDeckName = null;
+  deckNameInput.value = "";
+  showScreen("flashBuilder");
+  renderCardList();
+}
+function showFlashDeckSelection() {
+  showScreen("flashDeckSelect");
+  renderDeckList();
+  if (document.getElementById("startWithBack")) {
+    document.getElementById("startWithBack").checked = false;
+    document.getElementById("shuffleDeck").checked = true;
+  }
+}
+
+// ===== Global bindings =====
+window.showBuilder = showBuilder;
+window.showQuizSelection = showQuizSelection;
+window.showFlashMenu = showFlashMenu;
+window.backToMenu = backToMenu;
+window.addQuestion = addQuestion;
+window.saveQuiz = saveQuiz;
+window.addFlashcard = addFlashcard;
+window.flipCard = flipCard;
+window.nextCard = nextCard;
+window.prevCard = prevCard;
+window.nextQuestion = nextQuestion;
+window.prevQuestion = prevQuestion;
+window.importBulkFlashcards = importBulkFlashcards;
+window.saveDeck = saveDeck;
+window.importBulkQuestions = () => alert("Bulk quiz import coming soon!");
+window.applyAnswerKey = () => alert("Answer key feature coming soon!");
